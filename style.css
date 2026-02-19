@@ -1,53 +1,79 @@
 /* Configuração do fundo geral */
 body {
-    margin: 0;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-image: url('assets/background.png');
-    background-size: cover;
-    background-position: center;
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-image: url('assets/background.png');
+  background-size: cover;
+  background-position: center;
 }
 
 #game-container {
-    background-color: rgba(0, 0, 0, 0.6); /* Fundo escuro translúcido para destacar o tabuleiro */
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  background-color: rgba(0, 0, 0, 0.6); /* Fundo escuro translúcido para destacar o tabuleiro */
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }
 
 /* O Tabuleiro */
 #grid {
-    display: grid;
-    /* Cria 4 colunas de 60px */
-    grid-template-columns: repeat(4, 60px); 
-    /* Cria 4 linhas de 60px */
-    grid-template-rows: repeat(4, 60px); 
-    gap: 2px; /* O "rejunte" entre os tiles */
-    background-color: #333; /* Cor das bordas do grid */
-    border: 2px solid #333;
+  display: grid;
+  /* Cria 4 colunas de 60px */
+  /*grid-template-columns: repeat(8, 60px);
+  /* Cria 4 linhas de 60px 
+  grid-template-rows: repeat(8, 60px);
+  */
+  gap: 2px; /* O "rejunte" entre os tiles */
+  background-color: #333; /* Cor das bordas do grid */
+  border: 2px solid #333;
 }
 
 /* Cada quadrado do mapa */
 .tile {
-    width: 60px;
-    height: 60px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 /* O Chão (Preto) */
 .chao {
-    background-color: black;
+  position: relative;
+  background-color: black;
 }
 
-/* O Coelho (Branco) */
+.chao::before {
+  content: '';
+  height: 100%;
+  width: 100%;
+  color: white;
+
+  background-image: url('./assets/grass.jpg');
+  background-size: contain;
+  background-repeat: 0;
+}
+
+.chao[data-value='1']::after {
+  content: '';
+  height: 75%;
+  width: 75%;
+
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  background-image: url('./assets/rabbit.png');
+  background-size: cover;
+}
+
 .coelho {
-    background-color: white;
-    width: 40px; /* Um pouco menor que o tile para dar sensação de profundidade */
-    height: 40px;
-    border-radius: 50%; /* Arredondado para não parecer apenas um bloco quadrado em cima de outro */
-    box-shadow: 0 2px 5px rgba(255,255,255,0.3);
+  background-color: white;
+  width: 40px; /* Um pouco menor que o tile para dar sensação de profundidade */
+  height: 40px;
+  border-radius: 50%; /* Arredondado para não parecer apenas um bloco quadrado em cima de outro */
+  box-shadow: 0 2px 5px rgba(255, 255, 255, 0.3);
 }
