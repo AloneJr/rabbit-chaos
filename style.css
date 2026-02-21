@@ -43,31 +43,71 @@ body {
 .chao {
   position: relative;
   background-color: black;
-}
-
-.chao::before {
-  content: '';
-  height: 100%;
-  width: 100%;
-  color: white;
-
   background-image: url('./assets/grass.jpg');
-  background-size: contain;
-  background-repeat: 0;
+  background-size: cover; /* 'cover' preenche o quadrado certinho */
 }
 
-.chao[data-value='1']::after {
-  content: '';
-  height: 75%;
-  width: 75%;
+/* Novo: Sprite da Bala */
+.chao[data-bullet='1'] {
+    position: relative; /* Garante que o ::after tenha onde se ancorar caso não tenha chão configurado */
+}
 
+.chao[data-bullet='1']::after {
+  content: '';
+  height: 60%; /*Tava em 30% mas quase que não tinha retorno visual direito*/
+  width: 60%;
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  background-image: url('./assets/bullet.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  z-index: 4; /* Fica acima de TUDO, inclusive do Hunter e Coelhos */
+}
 
+.chao[data-coelho='1']::after {
+  content: '';
+  height: 75%;
+  width: 75%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   background-image: url('./assets/rabbit.png');
   background-size: cover;
+  z-index: 2; /* Garante que o coelho fique por cima da toca/item */
+}
+
+.chao[data-toca='1']::before {
+  content: '';
+  height: 90%;
+  width: 90%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-image: url('./assets/loveden.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  z-index: 1; /* Fica no chão */
+}
+
+.chao[data-hunter='1']::after {
+  content: '';
+  height: 120%; /* Um pouco maior que o tile para dar um efeito 3D legal */
+  width: 100%;
+  position: absolute;
+  top: 40%; /* Puxa um pouco pra cima */
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-image: url('./assets/hunter.png'); /* O nome do seu novo arquivo */
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: bottom; /* Alinha o pé dele com o chão */
+  z-index: 3; 
 }
 
 .coelho {
