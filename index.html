@@ -1,16 +1,104 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador de Movimento</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#171431">
+  <title>Rabbit Chaos — O Grande Truque</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="game-container">
-        <div id="grid"></div> 
-    </div>
+  <main class="game-shell">
+    <header class="game-header">
+      <div class="brand">
+        <span class="brand__eyebrow">O grande truque de</span>
+        <h1>Rabbit Chaos</h1>
+      </div>
 
-    <script src="script.js"></script>
+      <section class="hud" aria-label="Informações da partida">
+        <div class="hud-card">
+          <span class="hud-card__label">Ato</span>
+          <strong id="level-value">1</strong>
+        </div>
+        <div class="hud-card hud-card--rabbit">
+          <span class="hud-card__label">Coelhos</span>
+          <strong id="rabbit-value">0</strong>
+        </div>
+        <div class="hud-card hud-card--captured">
+          <span class="hud-card__label">Na cartola</span>
+          <strong id="captured-value">0</strong>
+        </div>
+        <div class="hud-card hud-card--life">
+          <span class="hud-card__label">Fôlego</span>
+          <strong id="life-value" aria-label="3 vidas">♥ ♥ ♥</strong>
+        </div>
+        <div class="spell-meter" aria-label="Recarga da magia">
+          <div class="spell-meter__topline">
+            <span>Magia</span>
+            <strong id="spell-label">PRONTA</strong>
+          </div>
+          <div class="spell-meter__track"><span id="spell-fill"></span></div>
+        </div>
+      </section>
+    </header>
+
+    <section class="stage" id="stage">
+      <div class="curtain curtain--left" aria-hidden="true"></div>
+      <div class="curtain curtain--right" aria-hidden="true"></div>
+
+      <div class="board-wrap">
+        <div id="board" class="board" aria-label="Campo dos coelhos">
+          <div class="board__grid" aria-hidden="true"></div>
+          <div id="entity-layer" class="entity-layer"></div>
+          <div id="fx-layer" class="fx-layer" aria-hidden="true"></div>
+          <p id="board-hint" class="board-hint">Arraste um coelho branco até a cartola</p>
+        </div>
+      </div>
+
+      <aside class="performer" aria-label="Mago e cartola">
+        <div class="magician-wrap" id="magician-wrap">
+          <div class="magic-sparkles" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          <img id="magician" src="assets/magician2.png" alt="Mago conjurando uma mão mágica">
+        </div>
+
+        <div id="hat-drop" class="hat-drop" aria-label="Solte os coelhos aqui">
+          <span class="hat-drop__label">SOLTE AQUI</span>
+          <img src="assets/tophat.png" alt="Cartola do mago">
+          <span id="hat-count" class="hat-drop__count">0</span>
+        </div>
+      </aside>
+
+      <div id="round-banner" class="round-banner" aria-live="polite"></div>
+
+      <section id="overlay" class="overlay">
+        <div class="panel">
+          <span class="panel__kicker">Uma apresentação de alto risco</span>
+          <h2 id="overlay-title">Prepare o grande truque</h2>
+          <p id="overlay-text">Capture os coelhos comuns sem machucá-los. Antes que eles tomem conta do palco.</p>
+          <div class="controls-guide">
+            <div><span class="mouse-icon mouse-icon--left">L</span><p><strong>Segure e arraste</strong> o coelho branco até a cartola.</p></div>
+            <div><span class="mouse-icon mouse-icon--right">R</span><p><strong>Botão direito</strong> lança magia contra ameaças.</p></div>
+          </div>
+          <button id="primary-button" class="primary-button" type="button">Começar o espetáculo</button>
+        </div>
+      </section>
+    </section>
+
+    <footer class="game-footer">
+      <span><i class="legend-dot legend-dot--normal"></i> Capture</span>
+      <span><i class="legend-dot legend-dot--danger"></i> Destrua</span>
+      <p>Tocas criam filhotes · Frutas fortalecem coelhos · Coelhos mágicos atacam</p>
+    </footer>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="magic-cursor" class="magic-cursor" aria-hidden="true">
+    <span class="magic-cursor__glow"></span>
+    <span class="magic-cursor__finger"></span>
+    <span class="magic-cursor__palm"></span>
+    <span class="magic-cursor__cuff"></span>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
