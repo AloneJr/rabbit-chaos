@@ -55,10 +55,10 @@
         </div>
       </div>
 
-      <aside class="performer" aria-label="Mago e cartola">
+      <aside class="performer" aria-label="Mago observando o tabuleiro">
         <div class="magician-wrap" id="magician-wrap">
           <div class="magic-sparkles" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-          <img id="magician" src="assets/magician2.png" alt="Mago conjurando uma mão mágica">
+          <img id="magician" src="assets/magician.png" alt="Mago observando os coelhos no tabuleiro">
         </div>
 
         <div id="hat-drop" class="hat-drop" aria-label="Solte os coelhos aqui">
@@ -67,6 +67,8 @@
           <span id="hat-count" class="hat-drop__count">0</span>
         </div>
       </aside>
+
+      <img class="magician-hands" src="assets/magician.png" alt="" aria-hidden="true">
 
       <div id="round-banner" class="round-banner" aria-live="polite"></div>
 
@@ -93,10 +95,7 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <div id="magic-cursor" class="magic-cursor" aria-hidden="true">
-    <span class="magic-cursor__glow"></span>
-    <span class="magic-cursor__finger"></span>
-    <span class="magic-cursor__palm"></span>
-    <span class="magic-cursor__cuff"></span>
+    <img id="magic-cursor-image" src="assets/cursor-idle.png" alt="">
   </div>
 
   <script src="script.js"></script>

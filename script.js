@@ -1,6 +1,11 @@
 const BOARD_SIZE = 10;
 const SPELL_COOLDOWN = 2800;
 const SPELL_RADIUS = 1.65;
+const CURSOR_SPRITES = {
+  idle: "assets/cursor-idle.png",
+  drop: "assets/cursor-drop.png",
+  hold: "assets/cursor-hold.png"
+};
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -33,8 +38,7 @@ class Rabbit {
   }
 
   render() {
-    this.node.style.setProperty("--x", this.x);
-    this.node.style.setProperty("--y", this.y);
+    this.game.positionEntity(this.node, this.x, this.y);
   }
 
   update(now) {
@@ -65,6 +69,7 @@ class RabbitChaos {
     this.hatDrop = document.getElementById("hat-drop");
     this.magician = document.getElementById("magician-wrap");
     this.cursor = document.getElementById("magic-cursor");
+    this.cursorImage = document.getElementById("magic-cursor-image");
     this.toastNode = document.getElementById("toast");
     this.roundBanner = document.getElementById("round-banner");
     this.boardHint = document.getElementById("board-hint");
@@ -94,12 +99,15 @@ class RabbitChaos {
     this.lastFrame = performance.now();
     this.entityId = 0;
     this.toastTimer = null;
+    this.cursorTimer = null;
+    this.cursorState = "idle";
 
     this.primaryButton.addEventListener("click", () => this.handlePrimaryButton());
     this.board.addEventListener("contextmenu", (event) => this.castSpell(event));
+    document.addEventListener("pointerdown", (event) => this.handlePointerDown(event));
     document.addEventListener("pointermove", (event) => this.handlePointerMove(event));
-    document.addEventListener("pointerup", (event) => this.finishCapture(event));
-    document.addEventListener("pointercancel", (event) => this.finishCapture(event));
+    document.addEventListener("pointerup", (event) => this.handlePointerRelease(event));
+    document.addEventListener("pointercancel", (event) => this.handlePointerRelease(event));
     window.addEventListener("blur", () => this.cancelCapture());
     window.addEventListener("keydown", (event) => {
       if (event.key === "Escape") this.cancelCapture();
@@ -142,8 +150,6 @@ class RabbitChaos {
     for (let i = 0; i < denCount; i += 1) this.spawnDen();
     for (let i = 0; i < fruitCount; i += 1) this.spawnFruit();
 
-    this.magician.classList.remove("is-hit");
-    void this.magician.offsetWidth;
     this.magician.classList.add("is-conjuring");
     this.roundBanner.innerHTML = `<small>O espetáculo continua</small>Ato ${this.level}`;
     this.roundBanner.classList.remove("is-visible");
@@ -168,6 +174,39 @@ class RabbitChaos {
     this.fruits = [];
     this.enemyShots = [];
     this.fxLayer.innerHTML = "";
+  }
+
+  projectBoardPoint(x, y) {
+    const depth = clamp(y / BOARD_SIZE, 0, 1);
+    const leftInset = 9 * (1 - depth);
+    const rowWidth = 82 + 18 * depth;
+    return {
+      x: leftInset + (x / BOARD_SIZE) * rowWidth,
+      y: (y / BOARD_SIZE) * 100,
+      depth
+    };
+  }
+
+  positionEntity(node, x, y, baseScale = 1, coordinatesAreCentered = false) {
+    const centerX = coordinatesAreCentered ? x : x + .5;
+    const centerY = coordinatesAreCentered ? y : y + .5;
+    const projected = this.projectBoardPoint(centerX, centerY);
+    const depthScale = .74 + projected.depth * .34;
+    node.style.setProperty("--screen-x", `${projected.x}%`);
+    node.style.setProperty("--screen-y", `${projected.y}%`);
+    node.style.setProperty("--entity-size", `${10 * depthScale * baseScale}%`);
+    node.style.zIndex = `${5 + Math.round(centerY * 3)}`;
+  }
+
+  boardPointFromClient(clientX, clientY) {
+    const rect = this.board.getBoundingClientRect();
+    const depth = clamp((clientY - rect.top) / rect.height, 0, .999);
+    const leftInset = rect.width * .09 * (1 - depth);
+    const rowWidth = rect.width * (.82 + .18 * depth);
+    return {
+      x: clamp((clientX - rect.left - leftInset) / rowWidth * BOARD_SIZE, 0, BOARD_SIZE - .01),
+      y: depth * BOARD_SIZE
+    };
   }
 
   freeCell() {
@@ -203,10 +242,9 @@ class RabbitChaos {
     const position = this.freeCell();
     const node = document.createElement("div");
     node.className = "entity den";
-    node.style.setProperty("--x", position.x);
-    node.style.setProperty("--y", position.y);
     node.innerHTML = '<img src="assets/loveden.png" alt="Toca de reprodução">';
     this.entityLayer.appendChild(node);
+    this.positionEntity(node, position.x, position.y);
     this.dens.push({ ...position, node, readyAt: performance.now() + 6500 + Math.random() * 2500 });
   }
 
@@ -215,10 +253,9 @@ class RabbitChaos {
     const position = this.freeCell();
     const node = document.createElement("div");
     node.className = "entity fruit";
-    node.style.setProperty("--x", position.x);
-    node.style.setProperty("--y", position.y);
     node.innerHTML = '<span class="fruit__berry" aria-label="Fruta mágica"></span>';
     this.entityLayer.appendChild(node);
+    this.positionEntity(node, position.x, position.y);
     this.fruits.push({ ...position, node });
   }
 
@@ -267,6 +304,7 @@ class RabbitChaos {
         den.node.classList.add("rabbit--hurt");
         window.setTimeout(() => den.node.classList.remove("rabbit--hurt"), 700);
         this.toast("A toca trouxe um novo coelho para o palco!");
+        this.updateHud(now);
       } else {
         den.readyAt = now + 1400;
       }
@@ -278,6 +316,32 @@ class RabbitChaos {
     }
   }
 
+  setCursorState(state) {
+    window.clearTimeout(this.cursorTimer);
+    this.cursorState = state;
+    this.cursorImage.src = CURSOR_SPRITES[state];
+    this.cursor.classList.toggle("is-dropping", state === "drop");
+    this.cursor.classList.toggle("is-holding", state === "hold");
+  }
+
+  handlePointerDown(event) {
+    if (event.button !== 0 || this.state !== "running" || this.draggedRabbit) return;
+    this.setCursorState("drop");
+  }
+
+  handlePointerRelease(event) {
+    if (this.draggedRabbit) {
+      this.finishCapture(event);
+      return;
+    }
+    if (this.cursorState !== "idle") this.releaseCursor();
+  }
+
+  releaseCursor() {
+    this.setCursorState("drop");
+    this.cursorTimer = window.setTimeout(() => this.setCursorState("idle"), 140);
+  }
+
   beginCapture(event, rabbit) {
     if (this.state !== "running" || rabbit.kind !== "normal" || this.draggedRabbit) return;
     event.preventDefault();
@@ -285,7 +349,10 @@ class RabbitChaos {
     rabbit.held = true;
     rabbit.node.classList.add("rabbit--held");
     document.body.appendChild(rabbit.node);
-    this.cursor.classList.add("is-grabbing");
+    this.setCursorState("drop");
+    this.cursorTimer = window.setTimeout(() => {
+      if (this.draggedRabbit === rabbit) this.setCursorState("hold");
+    }, 95);
     this.boardHint.classList.add("is-hidden");
     this.positionDraggedRabbit(event.clientX, event.clientY);
   }
@@ -312,7 +379,7 @@ class RabbitChaos {
     const hatRect = this.hatDrop.getBoundingClientRect();
     const overHat = event.clientX >= hatRect.left && event.clientX <= hatRect.right && event.clientY >= hatRect.top && event.clientY <= hatRect.bottom;
     this.draggedRabbit = null;
-    this.cursor.classList.remove("is-grabbing");
+    this.releaseCursor();
     this.hatDrop.classList.remove("is-ready");
 
     if (overHat && this.state === "running") {
@@ -349,7 +416,7 @@ class RabbitChaos {
     rabbit.node.style.left = "";
     rabbit.node.style.top = "";
     rabbit.render();
-    this.cursor.classList.remove("is-grabbing");
+    this.setCursorState("idle");
     this.hatDrop.classList.remove("is-ready");
   }
 
@@ -362,11 +429,7 @@ class RabbitChaos {
       return;
     }
 
-    const rect = this.board.getBoundingClientRect();
-    const target = {
-      x: clamp((event.clientX - rect.left) / rect.width * BOARD_SIZE, 0, BOARD_SIZE - .01),
-      y: clamp((event.clientY - rect.top) / rect.height * BOARD_SIZE, 0, BOARD_SIZE - .01)
-    };
+    const target = this.boardPointFromClient(event.clientX, event.clientY);
     this.spellReadyAt = now + SPELL_COOLDOWN;
     this.cursor.classList.add("is-casting", "is-cooling");
     window.setTimeout(() => this.cursor.classList.remove("is-casting"), 330);
@@ -394,9 +457,10 @@ class RabbitChaos {
 
   createSpellEffects(clientX, clientY, target) {
     const burst = document.createElement("div");
+    const projectedTarget = this.projectBoardPoint(target.x, target.y);
     burst.className = "spell-burst";
-    burst.style.left = `${target.x / BOARD_SIZE * 100}%`;
-    burst.style.top = `${target.y / BOARD_SIZE * 100}%`;
+    burst.style.left = `${projectedTarget.x}%`;
+    burst.style.top = `${projectedTarget.y}%`;
     this.fxLayer.appendChild(burst);
 
     const magicianRect = document.getElementById("magician").getBoundingClientRect();
@@ -433,10 +497,11 @@ class RabbitChaos {
 
   createPoof(position) {
     const poof = document.createElement("div");
+    const projectedPosition = this.projectBoardPoint(position.x, position.y);
     poof.className = "poof";
     poof.textContent = "✦";
-    poof.style.left = `${position.x / BOARD_SIZE * 100}%`;
-    poof.style.top = `${position.y / BOARD_SIZE * 100}%`;
+    poof.style.left = `${projectedPosition.x}%`;
+    poof.style.top = `${projectedPosition.y}%`;
     this.fxLayer.appendChild(poof);
     window.setTimeout(() => poof.remove(), 600);
   }
@@ -463,8 +528,7 @@ class RabbitChaos {
   }
 
   renderShot(shot) {
-    shot.node.style.left = `${shot.x / BOARD_SIZE * 100}%`;
-    shot.node.style.top = `${shot.y / BOARD_SIZE * 100}%`;
+    this.positionEntity(shot.node, shot.x, shot.y, .52, true);
   }
 
   updateEnemyShots(delta) {
@@ -489,9 +553,6 @@ class RabbitChaos {
   takeDamage() {
     if (this.state !== "running") return;
     this.lives -= 1;
-    this.magician.classList.remove("is-hit");
-    void this.magician.offsetWidth;
-    this.magician.classList.add("is-hit");
     this.toast("O mago foi atingido!");
     this.updateHud(performance.now());
     if (this.lives <= 0) this.gameOver();
@@ -518,14 +579,18 @@ class RabbitChaos {
   }
 
   updateHud(now) {
-    const remaining = Math.max(0, this.spellReadyAt - now);
-    const progress = 1 - remaining / SPELL_COOLDOWN;
     this.hud.level.textContent = this.level;
     this.hud.rabbits.textContent = this.rabbits.length;
     this.hud.captured.textContent = this.captured;
     this.hud.hatCount.textContent = this.captured;
     this.hud.life.textContent = this.lives > 0 ? Array(this.lives).fill("♥").join(" ") : "—";
     this.hud.life.setAttribute("aria-label", `${this.lives} vidas`);
+    this.updateSpellHud(now);
+  }
+
+  updateSpellHud(now) {
+    const remaining = Math.max(0, this.spellReadyAt - now);
+    const progress = 1 - remaining / SPELL_COOLDOWN;
     this.hud.spellFill.style.width = `${clamp(progress, 0, 1) * 100}%`;
     this.hud.spellLabel.textContent = remaining > 0 ? `${(remaining / 1000).toFixed(1)}s` : "PRONTA";
     this.cursor.classList.toggle("is-cooling", remaining > 0);
@@ -546,7 +611,7 @@ class RabbitChaos {
       this.updateEnvironment(now);
       this.updateEnemyShots(delta);
     }
-    this.updateHud(now);
+    this.updateSpellHud(now);
     requestAnimationFrame((nextNow) => this.loop(nextNow));
   }
 }
